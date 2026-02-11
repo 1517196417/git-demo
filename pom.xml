@@ -57,6 +57,25 @@
             <artifactId>hutool-all</artifactId>
             <version>5.7.17</version>
         </dependency>
+<!--    使用aop代理需要aspectj依赖  -->
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjrt</artifactId>
+            <version>1.9.7</version> <!-- 与 Spring 5.2.x 兼容的稳定版本 -->
+        </dependency>
+        <!-- AspectJ 编译器依赖 -->
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
+            <version>1.9.7</version>
+        </dependency>
+
+        <!-- redisson：优化分布式锁的不可重入等功能 -->
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
+            <version>3.13.6</version>
+        </dependency>
     </dependencies>
 
     <build>

@@ -1,5 +1,6 @@
 package com.hmdp.utils;
 
+import com.hmdp.dto.UserDTO;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.Nullable;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -12,10 +13,14 @@ public class LoginInterceptor implements HandlerInterceptor {
 
     public  boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         //只负责拦截需要验证登录状态的请求
-        if (UserHolder.getUser() == null) {
+        UserDTO user = UserHolder.getUser();
+        System.out.println("UserHolder.getUser()：" + user);
+        if ( user == null) {
+            System.out.println("UserHolder.getUser()为空");
             response.setStatus(401);
             return false;
         }
+
         return true;
     }
 

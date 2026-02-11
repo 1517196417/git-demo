@@ -23,6 +23,7 @@ public class SimpleRedisLock implements ILock{
     static {
         UNLOCK_SCRIPT = new DefaultRedisScript<>();
         UNLOCK_SCRIPT.setLocation(new ClassPathResource("unLock.lua"));
+        UNLOCK_SCRIPT.setResultType(Long.class);
     }
 
 
@@ -36,6 +37,7 @@ public class SimpleRedisLock implements ILock{
         long threadId = Thread.currentThread().getId();
         Boolean isLock = stringRedisTemplate.opsForValue()
                 .setIfAbsent(LOCK_SIMPLE_KEY + name, ID_PREFIX +threadId + "", timeoutSec, TimeUnit.SECONDS);
+        System.out.println("执行上分布式锁的返回值=" + isLock);
         return Boolean.TRUE.equals(isLock);
     }
 

@@ -85,17 +85,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             // 6：对象转换，安全转换为Map，修复空指针问题
             UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
             UserHolder.saveUser(userDTO);
-            Map<String, Object> userMap = BeanUtil.beanToMap(userDTO, new HashMap<>(),
-                    CopyOptions.create()
-                            .setIgnoreNullValue(true)
-                            // 字段值处理：空值设为空字符串，非空值转String
-                            .setFieldValueEditor((fieldName, fieldValue) -> {
-                                if (fieldValue == null) {
-                                    return "";
-                                }
-                                return fieldValue.toString();
-                            })
-            );
+//            Map<String, Object> userMap = BeanUtil.beanToMap(userDTO, new HashMap<>(),
+//                    CopyOptions.create()
+//                            .setIgnoreNullValue(true)
+//                            // 字段值处理：空值设为空字符串，非空值转String
+//                            .setFieldValueEditor((fieldName, fieldValue) -> {
+//                                if (fieldValue == null) {
+//                                    return "";
+//                                }
+//                                return fieldValue.toString();
+//                            })
+//            );
+            HashMap<String, String> userMap = new HashMap<>();
+            userMap.put("nickName", userDTO.getNickName());
+            userMap.put("id", userDTO.getId().toString());
+            userMap.put("icon",  userDTO.getIcon());
+            System.out.println("存入redis的userMap：" + userMap);
 
             // 7：存储用户信息到Redis Hash结构
             stringRedisTemplate.opsForHash().putAll(tokenKey, userMap);

@@ -66,6 +66,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         RedisData redisData = JSONUtil.toBean(shopJson, RedisData.class);
         Shop shop = JSONUtil.toBean((JSONObject) redisData.getData(), Shop.class);
         LocalDateTime expireTime = redisData.getExpireTime();
+        System.out.println("expireTime: " + expireTime);
         //3.1：未过期直接返回商户信息
         if(expireTime.isAfter(LocalDateTime.now())) {
             return shop;
