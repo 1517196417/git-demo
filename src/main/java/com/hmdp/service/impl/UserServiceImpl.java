@@ -12,12 +12,17 @@ import com.hmdp.mapper.UserMapper;
 import com.hmdp.service.IUserService;
 import com.hmdp.utils.RegexUtils;
 import com.hmdp.utils.UserHolder;
+import org.springframework.data.redis.connection.BitFieldSubCommands;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -25,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hmdp.utils.RedisConstants.*;
 import static com.hmdp.utils.RedisConstants.LOGIN_USER_TTL;
 import static com.hmdp.utils.SystemConstants.USER_NICK_NAME_PREFIX;
+import static java.time.LocalTime.now;
 
 /**
  * <p>
@@ -50,7 +56,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         //保存验证码到redis
         stringRedisTemplate.opsForValue().set(LOGIN_CODE_KEY + phone, code, LOGIN_CODE_TTL, TimeUnit.MINUTES);
         //发送验证码(log日志模拟发送)
-        log.debug("发送短信验证码成功。 验证码: " + code);
+        log.debug("\n验证码: " + code);
         return Result.ok();
     }
 
@@ -68,7 +74,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             return Result.fail("验证码错误");
         }
 
-        // 3. 验证码校验通过，删除Redis中的验证码（防止重复使用）
+//        // 3. 验证码校验通过，删除Redis中的验证码（防止重复使用）
         stringRedisTemplate.delete(LOGIN_CODE_KEY + phone);
 
         // 4：查询/注册用户
@@ -116,6 +122,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     }
 
+
+
     private User createUserWithLogin(String phone){
         User user = new User();
         user.setPhone(phone);
@@ -125,4 +133,60 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         return user;
     }
 
+    @Override
+    public Result sign() {
+        //1.获取当前用户
+        Long userId = UserHolder.getUser().getId();
+        //2.获取当前时间
+        LocalDateTime now = LocalDateTime.now();
+        String sign_suffix = now.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+        String signKey = USER_SIGN_KEY + userId + sign_suffix;
+
+        //3.获取当日是本月的第几天
+        int dayOfMonth = now.getDayOfMonth();
+
+        //4.执行setbit操作
+        Boolean setBit = stringRedisTemplate.opsForValue().setBit(signKey, dayOfMonth - 1, true);
+        //5.返回结果
+        return Result.ok();
+    }
+
+    @Override
+    public Result signCount() {
+        //1.获取当前用户
+        Long userId = UserHolder.getUser().getId();
+        //2.获取当前时间
+        LocalDateTime now = LocalDateTime.now();
+        String sign_suffix = now.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+        String signKey = USER_SIGN_KEY + userId + sign_suffix;
+
+        //3.获取当日是本月的第几天
+        int dayOfMonth = now.getDayOfMonth();
+
+        //4.获取本月签到的二进制数据对应的十进制数num
+        List<Long> results = stringRedisTemplate.opsForValue().bitField(signKey,
+                BitFieldSubCommands.create()
+                        .get(BitFieldSubCommands.BitFieldType.unsigned(dayOfMonth)).valueAt(0));
+
+        if(results == null || results.isEmpty()) {
+            return Result.ok(0);
+        }
+        Long num = results.get(0);
+        if(num == null || num == 0L) {
+            return Result.ok(0);
+        }
+
+        //5.循环倒序遍历num的二进制表示，统计其中的1的个数（通过与1与运算）
+        int count = 0;
+        while(true) {
+            if ((num & 1) == 1) {
+                count++;
+            } else {
+                break;
+            }
+            num >>>= 1; // 每次判断最后一位bit，然后右移一位
+        }
+
+        return Result.ok(count);
+    }
 }

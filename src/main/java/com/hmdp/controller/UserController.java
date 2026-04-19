@@ -1,9 +1,11 @@
 package com.hmdp.controller;
 
 
+import cn.hutool.core.bean.BeanUtil;
 import com.hmdp.dto.LoginFormDTO;
 import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
+import com.hmdp.entity.User;
 import com.hmdp.entity.UserInfo;
 import com.hmdp.service.IUserInfoService;
 import com.hmdp.service.IUserService;
@@ -82,4 +84,27 @@ public class UserController {
         // 返回
         return Result.ok(info);
     }
+
+    //根据id查询用户,是实现共同关注功能，显示博主的用户信息
+    @GetMapping("/{id}")
+    public Result queryUserByID(@PathVariable("id") Long id){
+        User user = userService.getById(id);
+
+        if(user == null){
+            return Result.ok();
+        }
+        UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
+        return Result.ok(userDTO);
+    }
+
+    @PostMapping("/sign")
+    public Result sign() {
+        return userService.sign();
+    }
+
+    @GetMapping("/sign/count")
+    public Result signCount() {
+        return userService.signCount();
+    }
+
 }
